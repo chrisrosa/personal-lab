@@ -1,0 +1,24 @@
+# macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+
+# macOS volume metadata
+.Spotlight-V100
+.Trashes
+.fseventsd
+.VolumeIcon.icns
+
+# General temporary files
+*.swp
+*.lock
+*.tmp
+
+# Node modules (in case you experiment with npm)
+node_modules/
+
+# Python cache (if you drop in scripts later)
+__pycache__/
+*.py[cod]
