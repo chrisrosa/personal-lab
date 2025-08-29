@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Prolate Ellipsoid — no-module, file:// friendly</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    html, body { height:100%; margin:0; }
+    body { display:grid; grid-template-rows:auto 1fr; background:#f6f7fb; color:#111;
+           font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif; }
+    header { padding:12px 16px; border-bottom:1px solid #e4e6ef; background:#fff;
+             display:flex; gap:16px; flex-wrap:wrap; align-items:center; }
+    header h1 { font-size:16px; margin:0; }
+    label { display:inline-flex; align-items:center; gap:6px; margin-right:12px; }
+    input[type="range"] { width:220px; }
+    #canvas { width:100%; height:100%; display:block; }
+    .hint { font-size:12px; color:#666; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Prolate Ellipsoid (“pour-and-forget” candidate)</h1>
+    <label>Aspect: <span id="ratioLbl">1.50</span>:1
+      <input id="ratio" type="range" min="1" max="2.5" step="0.01" value="1.5" />
+    </label>
+    <label>Axis
+      <select id="axis">
+        <option value="z" selected>Z</option>
+        <option value="y">Y</option>
+        <option value="x">X</option>
+      </select>
+    </label>
+    <label><input id="wire" type="checkbox" /> Wireframe</label>
+    <label><input id="autorot" type="checkbox" /> Auto-rotate</label>
+    <span class="hint">Mouse: orbit (L), pan (wheel-click), zoom (wheel)</span>
+  </header>
+
+  <canvas id="canvas"></canvas>
+
+  <!-- No modules; works from file://  -->
+  <script src="https://cdn.babylonjs.com/babylon.js"></script>
+  <script>
+    const canvas = document.getElementById('canvas');
+    const engine = new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true });
+    const scene = new BABYLON.Scene(engine);
+    scene.clearColor = new BABYLON.Color4(0.965, 0.969, 0.984, 1); // #f6f7fb
+
+    // Camera
+    const camera = new BABYLON.ArcRotateCamera("cam",
+      -Math.PI/5, Math.PI/3, 6, new BABYLON.Vector3(0,0,0), scene);
+    camera.attachControl(canvas, true);
+    camera.wheelDeltaPercentage = 0.01;
+
+    // Lights
+    const hemi = new BABYLON.HemisphericLight("hemi", new BABYLON.Vector3(0,1,0), scene);
+    hemi.intensity = 0.9;
+    const dir = new BABYLON.DirectionalLight("dir", new BABYLON.Vector3(-1,-1,-1), scene);
+    dir.position = new BABYLON.Vector3(5,6,5);
+    dir.intensity = 0.9;
+
+    // Ground (for depth cue)
+    const ground = BABYLON.MeshBuilder.CreateGround("g", { width: 40, height: 40 }, scene);
+    ground.position.y = -1.2;
+    const gmat = new BABYLON.StandardMaterial("gmat", scene);
+    gmat.diffuseColor = new BABYLON.Color3(0.906, 0.906, 0.918); // #e7e7ea
+    ground.material = gmat;
+
+    // Ellipsoid = sphere scaled
+    const sphere = BABYLON.MeshBuilder.CreateSphere("s", { segments: 64, diameter: 2 }, scene);
+    const mat = new BABYLON.StandardMaterial("mat", scene);
+    mat.specularColor = new BABYLON.Color3(0.2,0.2,0.2);
+    mat.diffuseColor = new BABYLON.Color3(0.95,0.95,0.97);
+    sphere.material = mat;
+
+    // UI wiring
+    const ratio = document.getElementById('ratio');
+    const ratioLbl = document.getElementById('ratioLbl');
+    const axis = document.getElementById('axis');
+    const wire = document.getElementById('wire');
+    const autorot = document.getElementById('autorot');
+
+    function applyScale() {
+      const a = parseFloat(ratio.value);
+      ratioLbl.textContent = a.toFixed(2);
+      sphere.scaling.set(1,1,1);
+      if (axis.value === "x") sphere.scaling.x = a;
+      if (axis.value === "y") sphere.scaling.y = a;
+      if (axis.value === "z") sphere.scaling.z = a;
+    }
+    applyScale();
+    ratio.addEventListener('input', applyScale);
+    axis.addEventListener('change', applyScale);
+    wire.addEventListener('change', () => { sphere.material.wireframe = wire.checked; });
+
+    // Auto-rotate
+    scene.onBeforeRenderObservable.add(() => {
+      if (autorot.checked) sphere.rotation.y += engine.getDeltaTime() * 0.0006;
+    });
+
+    // Resize & render
+    window.addEventListener('resize', () => engine.resize());
+    engine.runRenderLoop(() => scene.render());
+  </script>
+</body>
+</html>
